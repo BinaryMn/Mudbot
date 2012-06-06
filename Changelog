@@ -1,0 +1,21 @@
+06/06/2012
+- Initial commit, a lot of Aetolia-specific things have been commented out and 
+will be removed in future versions.
+- New features that have been merged include, but are not limited to:
+	* map shrine
+	* map ruler
+	* wormhole support
+	* guard support
+	* additional sensing/seek parsing
+	* improved room/area searching and functionality
+
+- New features I've added
+	* vnums will be appended to trailblazing scout if the rooms have been 
+	mapped and there are not duplicates
+
+- Todo
+	* Fix farsee parsing function
+	* Fix trailblazing pursue function
+	* Remove Aetolia-specific functions that we don't need
+	* Add on to scout function to pass player names to locate_rooms so 
+	player locations are displayed on the map.

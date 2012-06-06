@@ -1,1 +1,7 @@
-Mudbot I_Mapper for Aetolia.
+I_Mapper module for Imperian
+
+Additions are merged from xondk's Aetolia fork and created by myself.
+
+DISCLAIMER: While I won't intentionally push changes that will break this module, do not assume everything is working out of the box -- especially in the testing branch.
+
+PROTIP: I use Linux almost exclusively. Nothing I add has been tested to compile with Windows. Since Windows doesn't support C99, there's always the chance something I add will break the module in Windows. That being said, i_mapper.dll will probably never be updated unless someone feels like compiling it.

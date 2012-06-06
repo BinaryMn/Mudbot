@@ -27,17 +27,18 @@
 
 #include "module.h"
 #include "i_mapper.h"
+#include <stdio.h>
+#include <string.h>
 
 #include <sys/stat.h>
 
 int mapper_version_major = 5;
-int mapper_version_minor = 82;
+int mapper_version_minor = 8;
 
 
 char *i_mapper_id = I_MAPPER_ID "\r\n" I_MAPPER_H_ID "\r\n" HEADER_ID "\r\n" MODULE_ID "\r\n";
 
-char *room_color = "\33[33m";
-char *daynight_color = "\33[0;33m";
+char *room_color = "\133m";
 char *exit_color = "\33[1;34m";
 //char *room_color = "\33[35m";
 int room_color_len = 5;
@@ -65,102 +66,80 @@ int reverse_exit[] =
 ROOM_TYPE *room_types;
 ROOM_TYPE *null_room_type;
 
-/*
-   ROOM_TYPE room_types[256] =
-   {  { "Unknown",			C_r,	1, 1, 0, 0 },
-   { "Undefined",		C_R,	1, 1, 0, 0 },
-   { "Road",			C_D,	1, 1, 0, 0 },
-   { "Path",			C_D,	1, 1, 0, 0 },
-   { "Natural underground",	C_y,	1, 1, 0, 0 },
-   { "River",			C_B,	3, 3, 1, 0 },
-   { "Ocean",			C_B,	3, 3, 1, 0 },
-   { "Grasslands",		C_G,	1, 1, 0, 0 },
-   { "Forest",			C_g,	1, 1, 0, 0 },
-   { "Beach",			C_Y,	1, 1, 0, 0 },
-   { "Garden",			C_G,	1, 1, 0, 0 },
-   { "Urban",			C_D,	1, 1, 0, 0 },
-   { "Hills",			C_y,	1, 1, 0, 0 },
-   { "Mountains",		C_y,	1, 1, 0, 0 },
-   { "Desert",			C_y,	1, 1, 0, 0 },
-   { "Jungle",			C_g,	1, 1, 0, 0 },
-   { "Valley",			C_y,	1, 1, 0, 0 },
-   { "Freshwater",		C_B,	3, 3, 1, 0 },
-   { "Constructed underground",	C_y,	1, 1, 0, 0 },
-   { "Swamp",			C_y,	1, 1, 0, 0 },
-   { "Underworld",		C_R,	1, 1, 0, 0 },
-   { "Sewer",			C_D,	1, 1, 0, 0 },
-   { "Tundra",			C_W,	1, 1, 0, 0 },
-   { "Sylayan city",		C_D,	1, 1, 0, 0 },
-   { "Crags",			C_D,	1, 1, 0, 0 },
-   { "Deep Ocean",		C_B,	1, 1, 0, 1 },
-   { "Dark Forest",		C_D,	1, 1, 0, 0 },
-   { "Polar",			C_W,	1, 1, 0, 0 },
-   { "Warrens",			C_y,	1, 1, 0, 0 },
-   { "Dwarven city",		C_D,	1, 1, 0, 0 },
-   { "Underground Lake",	C_B,	3, 3, 1, 0 },
-   { "Tainted Water",		C_R,	5, 5, 1, 0 },
-   { "Farmland",		C_Y,	1, 1, 0, 0 },
-   { "Village",			C_c,	1, 1, 0, 0 },
-   { "Academia",		C_c,	1, 1, 0, 0 },
-
+ /* ROOM_TYPE room_types[256] = 
+{  { "Unknown",                 C_r,    1, 1, 0, 0 },
+   { "Undefined",               C_R,    1, 1, 0, 0 },
+   { "Road",                    C_D,    1, 1, 0, 0 },
+   { "Path",                    C_D,    1, 1, 0, 0 },
+   { "Natural underground",     C_y,    1, 1, 0, 0 },
+   { "River",                   C_B,    3, 3, 1, 0 },
+   { "Ocean",                   C_B,    3, 3, 1, 0 },
+   { "Grasslands",              C_G,    1, 1, 0, 0 },
+   { "Forest",                  C_g,    1, 1, 0, 0 },
+   { "Beach",                   C_Y,    1, 1, 0, 0 },
+   { "Garden",                  C_G,    1, 1, 0, 0 },
+   { "Urban",                   C_D,    1, 1, 0, 0 },
+   { "Hills",                   C_y,    1, 1, 0, 0 },
+   { "Mountains",               C_y,    1, 1, 0, 0 },
+   { "Desert",                  C_y,    1, 1, 0, 0 },
+   { "Jungle",                  C_g,    1, 1, 0, 0 },
+   { "Valley",                  C_y,    1, 1, 0, 0 },
+   { "Freshwater",              C_B,    3, 3, 1, 0 },
+   { "Constructed underground", C_y,    1, 1, 0, 0 },
+   { "Swamp",                   C_y,    1, 1, 0, 0 },
+   { "Underworld",              C_R,    1, 1, 0, 0 },
+   { "Sewer",                   C_D,    1, 1, 0, 0 },
+   { "Tundra",                  C_W,    1, 1, 0, 0 },
+   { "Sylayan city",            C_D,    1, 1, 0, 0 },
+   { "Crags",                   C_D,    1, 1, 0, 0 },
+   { "Deep Ocean",              C_B,    1, 1, 0, 1 },
+   { "Dark Forest",             C_D,    1, 1, 0, 0 },
+   { "Polar",                   C_W,    1, 1, 0, 0 },
+   { "Warrens",                 C_y,    1, 1, 0, 0 },
+   { "Dwarven city",            C_D,    1, 1, 0, 0 },
+   { "Underground Lake",        C_B,    3, 3, 1, 0 },
+   { "Tainted Water",           C_R,    5, 5, 1, 0 },
+   { "Farmland",                C_Y,    1, 1, 0, 0 },
+   { "Village",                 C_c,    1, 1, 0, 0 },
+   { "Academia",                C_c,    1, 1, 0, 0 },
+   { "the Stream of Consciousness",     C_m,    1, 1, 0, 0 },
+   
    { NULL, NULL, 0, 0, 0 }
-   };*/
+}; */
 
 
 COLOR_DATA color_names[] =
 {
-	{ "normal",	 C_0,		"\33[0m", 4 },
-	{ "red",		 C_r,		"\33[31m", 5 },
-	{ "green",		 C_g, 		"\33[32m", 5 },
-	{ "brown",		 C_y, 		"\33[33m", 5 },
-	{ "blue",		 C_b, 		"\33[34m", 5 },
-	{ "magenta",	 "\33[0;35m", 	"\33[35m", 5 },
-	{ "cyan",		 "\33[0;36m", 	"\33[36m", 5 },
-	{ "white",		 "\33[0;37m", 	"\33[37m", 5 },
-	{ "dark",		 C_D, 		C_D, 7 },
-	{ "bright-red",	 C_R, 		C_R, 7 },
-	{ "bright-green",	 C_G, 		C_G, 7 },
-	{ "bright-yellow",	 C_Y, 		C_Y, 7 },
-	{ "bright-blue",	 C_B, 		C_B, 7 },
-	{ "bright-magenta", "\33[1;35m", 	"\33[1;35m", 7 },
-	{ "bright-cyan",	 C_C, 		C_C, 7 },
-	{ "bright-white",	 C_W, 		C_W, 7 },
-
-	{ NULL, NULL, 0 }
+     { "normal",         C_0,           "\33[0m", 4 },
+     { "red",            C_r,           "\33[31m", 5 },
+     { "green",          C_g,           "\33[32m", 5 },
+     { "brown",          C_y,           "\33[33m", 5 },
+     { "blue",           C_b,           "\33[34m", 5 },
+     { "magenta",        "\33[0;35m",   "\33[35m", 5 },
+     { "cyan",           "\33[0;36m",   "\33[36m", 5 },
+     { "white",          "\33[0;37m",   "\33[37m", 5 },
+     { "dark",           C_D,           C_D, 7 },
+     { "bright-red",     C_R,           C_R, 7 },
+     { "bright-green",   C_G,           C_G, 7 },
+     { "bright-yellow",  C_Y,           C_Y, 7 },
+     { "bright-blue",    C_B,           C_B, 7 },
+     { "bright-magenta", "\33[1;35m",   "\33[1;35m", 7 },
+     { "bright-cyan",    C_C,           C_C, 7 },
+     { "bright-white",   C_W,           C_W, 7 },
+   
+     { NULL, NULL, 0 }
 };
 
 
-COLOR_DATA daynight_names[] =
+	CITY_DATA cities[] =
 {
-	{ "normal",	 "\33[0m",		"\33[0m", 4 },
-	{ "red",		 "\33[0;31m",	"\33[0;31m", 7 },
-	{ "green",		 "\33[0;32m", 	"\33[0;32m", 7 },
-	{ "brown",		 "\33[0;33m", 	"\33[0;33m", 7 },
-	{ "blue",		 "\33[0;34m", 	"\33[0;34m", 7 },
-	{ "magenta",	 "\33[0;35m", 	"\33[0;35m", 7 },
-	{ "cyan",		 "\33[0;36m", 	"\33[0;36m", 7 },
-	{ "white",		 "", 	"", 0 },
-	{ "dark",		 "", 	"", 0 },
-	{ "bright-red",	 "\33[31m", "\33[31m", 4 },
-	{ "bright-green",	 "\33[32m", "\33[32m", 4 },
-	{ "bright-yellow",	 "\33[33m", "\33[33m", 4 },
-	{ "bright-blue",	 "\33[34m", "\33[34m", 4 },
-	{ "bright-magenta", "\33[35m", "\33[35m", 4 },
-	{ "bright-cyan",	 "\33[36m", "\33[36m", 4 },
-	{ "bright-white",	 "\33[37m", "\33[37m", 4 },
-
-	{ NULL, NULL, 0 }
-};
-
-CITY_DATA cities[] =
-{
-	{"Ashtan", C_c, 0 },
-	{"Bloodloch", C_R, 0},
-	{"Duiran", C_G, 0},
-	{"Enorian", C_Y, 0},
-	{"Spinesreach", C_y, 0},
-	{"Drakkenmont", C_D, 0},
-
+	{"Antioch", C_c, 0 },
+	{"Celidon", C_R, 0},
+	{"Ithaqua", C_G, 0},
+	{"Khandava", C_Y, 0},
+	{"Kinsarmar", C_y, 0},
+	{"Stavenn", C_D, 0},
+	
 	{ NULL, NULL, 0 }
 };
 
@@ -229,6 +208,8 @@ char werescentmsg[512];
 AREA_DATA *igareaoff;
 /* config.mapper.txt options. */
 int disable_swimming;
+int disable_crashing; 
+int disable_pear;
 int disable_wholist;
 int disable_alertness;
 int disable_locating;
@@ -237,6 +218,8 @@ int disable_mxp_title = 1;
 int disable_mxp_exits = 1;
 int disable_mxp_map;
 int disable_autolink;
+int disable_sewer_grates;
+int enable_godrooms;
 int disable_artifacts;
 int disable_additional_name = 1;
 int disable_worm_warp = 1;
@@ -257,12 +240,18 @@ char *underitem;
 char *wingcmd;
 int wingroom = 0;
 int wingtmpdisable = 0;
-int wingtmproomdisable = 0;
 int autowing = 0;
 
 int wateroption = 0;
 int automapsize = 0;
 int disable_auto_unlock;
+
+int enable_godrooms;
+
+int disable_auto_unlock;
+
+char *dash_command;
+char *caravan_command;
 
 char *dash_command;
 char *artimsg;
@@ -275,7 +264,7 @@ int troopmove;
 char guardnum[256];
 int guardmove;
 
-short int onlogin = 0;
+// short int onlogin = 0;
 /* fullline check bypass wrapwidth */
 char fullline[8192];
 int fulllinen;
@@ -338,8 +327,6 @@ int force_save;
 ROOM_DATA *bump_room;
 int bump_exits;
 int area_search;
-int area_leylinesearch;
-ROOM_DATA *sleyroom;
 int searching;
 ROOM_DATA *search_room;
 char area_search_for[256];
@@ -358,14 +345,11 @@ void i_mapper_process_server_line( LINE *line );
 void i_mapper_process_server_prompt( LINE *line );
 int  i_mapper_process_client_command( char *cmd );
 int  i_mapper_process_client_aliases( char *cmd );
-/*void i_mapper_process_server_paragraph( LINES *l );*/
 void i_mapper_mxp_enabled( );
 void locate_room_in_area( char *name, char *player,int nl, AREA_DATA *sarea );
 void do_map_shrine(char *arg);
 void do_map_path( char *arg );
 int cmp_room_wing();
-void init_openlist( ROOM_DATA *room );
-void path_finder( );
 
 AREA_DATA *get_area_by_name( char *string );
 int case_strstr( char *haystack, char *needle );
@@ -383,7 +367,6 @@ ENTRANCE( i_mapper_module_register )
 	self->process_server_prompt = i_mapper_process_server_prompt;
 	self->process_client_command = NULL;
 	self->process_client_aliases = i_mapper_process_client_aliases;
-/*	self->process_server_paragraph = i_mapper_process_server_paragraph;*/
 	self->build_custom_prompt = NULL;
 	self->main_loop = NULL;
 	self->update_descriptors = NULL;
@@ -1150,7 +1133,7 @@ int parse_title( const char *line )
 	DEBUG( "parse_title" );
 
 	/*Lets avoid that annoying date*/
-	if ( !strncmp(line, "It is now the ", 14 ) )
+	if ( !strncmp(line, "It is the ", 14 ) )
 		return -1;
 
 	/* Capturing mode. */
@@ -1620,8 +1603,6 @@ int parse_title( const char *line )
 	return 2;
 }
 
-
-
 void parse_room( LINE *l )
 {
 	char *line = l->line;
@@ -1664,16 +1645,7 @@ void parse_room( LINE *l )
 			burrowed = 1;
 			BurrowFound = 1;
 		}
-		if ( strstr( l->rawp[title_offset], room_color/*, room_color_len*/ ) )
-		{
-			//	     insert( title_offset, "Y" );
-			parsing_room = 1;
-			if ( !BurrowFound )
-				burrowed = 0;
-			if ( !FlyingFound )
-				flying = 0;
-		}
-		if ( strstr( l->rawp[title_offset], daynight_color/*, room_color_len*/ ) )
+		if ( strstr( l->rawp[0], room_color/*, room_color_len*/ ) )
 		{
 			//	     insert( title_offset, "Y" );
 			parsing_room = 1;
@@ -1725,7 +1697,7 @@ void parse_room( LINE *l )
 		end_offset = 0;
 
 		/* Remove the road from: "Title. (road)." */
-		if ( l->len > 9 && l->line[l->len-1] == ')' &&
+		if ( l->len > 9 && l->line[l->len-1] == '.' && l->line[l->len-2] == ')' && 
 				( eol = strstr( l->line, ". (" ) ) )
 		{
 			end_offset = ( eol - l->line ) + 1;
@@ -2252,35 +2224,14 @@ void parse_ruler( char *line )
 		clientfr("ruler error");
 }
 
-void nowinglongreset()
+void parse_nowingarea(char *line)
 {
-    wingtmproomdisable = 0;
-    clientff(C_W"[Automatic wings enabled]\r\n"C_0);
-}
-
-void parse_nowing(char *line)
-{
-    if (strcmp("Your powers cannot carry you over continents or planes.",line) && strcmp("You open your mouth to speak, but the sound dies as soon as it leaves your mouth.",line))
+    if (strcmp("Your powers cannot carry you over continents or planes.",line))
     return;
-
-    if (!strcmp("You open your mouth to speak, but the sound dies as soon as it leaves your mouth.",line))
-    {wingtmproomdisable=1;
-     clientff(C_D"\r\n[Automatic wings disabled for 10 seconds]\r\n"C_0);
-	 add_timer( "wings_disabled_timer", 10, nowinglongreset, 0, 0, 0 );
-	 if ( auto_walk )
-	 {
-	     auto_walk = 2;
-	 }
-      return;}
 
     if ( !current_room->area->nowingarea ) {
     current_room->area->nowingarea = 1;
     clientfr("Area added to NoWings List");
-    if ( auto_walk )
-	 {
-	     auto_walk = 2;
-	 }
-    return;
     }
 }
 
@@ -2356,35 +2307,6 @@ void go_next( )
 				clientff(C_R"\r\n[Unable to find path to "C_y"%s "C_G"%d"C_R"]\r\n"C_0,search_room->name,search_room->vnum);
 			}
 		}
-		if (area_leylinesearch)
-		{
-		ROOM_DATA *r;
-		int i;
-
-		r = sleyroom, i = 0;
-		/* Count rooms left. */
-		while ( r )
-		{
-			r = r->next_in_area;
-			i++;
-		}
-
-		clientff( C_R "\r\n[Rooms left: %d.]\r\n" C_0, i - 1 );
-
-		sleyroom = sleyroom->next_in_area;
-
-		if ( !sleyroom )
-		{
-			area_leylinesearch = 0;
-			clientfr( "All rooms searched." );
-			return;
-		}
-
-		init_openlist( NULL );
-		init_openlist( sleyroom );
-		path_finder( );
-		go_next( );
-		}
 	}
 	else if ( troopmove == 1 && troopn != NULL )
 	{
@@ -2430,7 +2352,7 @@ void go_next( )
 		sprintf( buf, "say %s\r\n", artimsg );
 		send_to_server( buf );
 		auto_walk = 1;
-/*		mode = GET_UNLOST; */
+		mode = GET_UNLOST;
 		artimsg = NULL;
 	}
 	else if ( swim_next && mounted ) {
@@ -3477,6 +3399,8 @@ int save_settings( char *file )
 	}
 
 	fprintf( fl, "Disable-Swimming %s\r\n", disable_swimming ? "yes" : "no" );
+	fprintf( fl, "Disable-Crashing %s\r\n", disable_crashing ? "yes" : "no" );
+	fprintf( fl, "Disable-Pear %s\r\n", disable_pear ? "yes" : "no" );
 	fprintf( fl, "Disable-WhoList %s\r\n", disable_wholist ? "yes" : "no" );
 	fprintf( fl, "Disable-Alertness %s\r\n", disable_alertness ? "yes" : "no" );
 	fprintf( fl, "Disable-Locating %s\r\n", disable_locating ? "yes" : "no" );
@@ -3485,6 +3409,8 @@ int save_settings( char *file )
 	fprintf( fl, "Disable-MXPExits %s\r\n", disable_mxp_exits ? "yes" : "no" );
 	fprintf( fl, "Disable-MXPMap %s\r\n", disable_mxp_map ? "yes" : "no" );
 	fprintf( fl, "Disable-AutoLink %s\r\n", disable_autolink ? "yes" : "no" );
+	fprintf( fl, "Disable-SewerGrates %s\r\n", disable_sewer_grates ? "yes" : "no" );
+	fprintf( fl, "Enable-GodRooms %s\r\n", enable_godrooms ? "yes" : "no" );
 	fprintf( fl, "Disable-Artifacts %s\r\n", disable_artifacts ? "yes" : "no" );
 	fprintf( fl, "Disable-AdditionalName %s\r\n", disable_additional_name ? "yes" : "no" );
 	if ( wateroption == 2 )
@@ -3599,7 +3525,6 @@ int load_settings( char *file )
 				if ( !strcmp( value, color_names[i].name ) )
 				{
 					room_color = color_names[i].title_code;
-					daynight_color = daynight_names[i].title_code;
 					room_color_len = color_names[i].length;
 					break;
 				}
@@ -3626,6 +3551,26 @@ int load_settings( char *file )
 			else
 				debugf( "Parse error in file '%s', expected 'yes' or 'no', got '%s' instead.", file, value );
 		}
+		
+		else if ( !strcmp( option, "Disable-Crashing" ) )
+          {
+             if ( !strcmp( value, "yes" ) )
+               disable_crashing = 1;
+             else if ( !strcmp( value, "no" ) )
+               disable_crashing = 0;
+             else
+               debugf( "Parse error in file '%s', expected 'yes' or 'no', got '%s' instead.", file, value );
+          }
+   
+        else if ( !strcmp( option, "Disable-Pear" ) )
+          {
+             if ( !strcmp( value, "yes" ) )
+               disable_pear = 1;
+             else if ( !strcmp( value, "no" ) )
+               disable_pear = 0;
+             else
+               debugf( "Parse error in file '%s', expected 'yes' or 'no', got '%s' instead.", file, value );
+          }
 
 		else if ( !strcmp( option, "Disable-WhoList" ) )
 		{
@@ -3707,6 +3652,26 @@ int load_settings( char *file )
 				debugf( "Parse error in file '%s', expected 'yes' or 'no', got '%s' instead.", file, value );
 		}
 
+		 else if ( !strcmp( option, "Disable-SewerGrates" ) )
+          {
+             if ( !strcmp( value, "yes" ) )
+               disable_sewer_grates = 1;
+             else if ( !strcmp( value, "no" ) )
+               disable_sewer_grates = 0;
+             else
+               debugf( "Parse error in file '%s', expected 'yes' or 'no', got '%s' instead.", file, value );
+          }
+		  
+		  else if ( !strcmp( option, "Enable-GodRooms" ) )
+          {
+             if ( !strcmp( value, "yes" ) )
+               enable_godrooms = 1;
+             else if ( !strcmp( value, "no" ) )
+               enable_godrooms = 0;
+             else
+               debugf( "Parse error in file '%s', expected 'yes' or 'no', got '%s' instead.", file, value );
+          }
+		  
 		else if ( !strcmp( option, "Disable-Artifacts" ) )
 		{
 			if ( !strcmp( value, "yes" ) )
@@ -4143,8 +4108,6 @@ void save_map( char *file )
 				fprintf(fl, "Owned by %s\n",room->owner);
 			if ( room->ruler )
 				fprintf(fl, "Ruler %s\n",room->ruler);
-			if ( room->aetvnum > 0 )
-				fprintf(fl, "AetoliaV %d\n",room->aetvnum );
 			for ( i = 1; dir_name[i]; i++ )
 			{
 				if ( room->exits[i] )
@@ -5125,14 +5088,7 @@ int load_map( char *file )
 			}
 			room->ruler = malloc(strlen(line+6)+1);strcpy(room->ruler,line+6);
 		}
-		else if ( !strncmp(line, "AetoliaV ", 9 ) )
-		{ if ( section != 2 )
-			{
-				debugf("wrong section for aetolia vnum statement.");
-				return 1;
-			}
-			room->aetvnum = atoi(line+9);
-		}
+		
 		/* Deprecated. Here only for backwards compatibility. */
 		else if ( !strncmp( line, "Marked", 6 ) )
 		{
@@ -5316,7 +5272,7 @@ void init_openlist( ROOM_DATA *room )
 
 int cmp_room_wing()
 {
-    if (wingroom == 0 || wingcmd == NULL || disable_artifacts || wingtmpdisable || wingtmproomdisable )
+    if (wingroom == 0 || wingcmd == NULL || disable_artifacts || wingtmpdisable )
     return 0;
 
     if (!strcmp(current_room->area->name, "The Havens.")) {
@@ -5806,8 +5762,9 @@ void locate_room( char *name, int area, char *player )
 	int more = 0,i;
 
 	DEBUG( "locate_room" );
-
+	
 	strcpy( buf, name );
+	printf("Room name data: [%s].\n", buf);
 	if (areaonly) {
 		for ( room = current_area->rooms; room; room = room->next_in_area ) {
 			int a;
@@ -6319,6 +6276,45 @@ void parse_scent( char *line )
 	}
 }
 
+void parse_scout( char *line )
+{
+	char *p = NULL;
+	char buf[256];
+	//char roomname[256];
+	DEBUG ( "parse_scout" );
+
+	// First line of 'scout area' is what starts the magic
+	if ( !strcmp( line, "You sense the following people in the area:") )
+	{
+	scout_list = 2;
+	areaonly = 1;
+	return;
+	}
+	
+	if ( !scout_list )
+		return;
+
+	if ( scout_list == 2 )
+        {
+		printf("Checking [%s].\n", line);
+                p = strstr (line, " at " );
+                if ( p ){
+			strncpy(buf, p+4, 256 - 2);   // 256, or whatever the size of buf is; -2 because you need space for the period and the null string terminator
+			strcat(buf, ".");  // add a trailing period
+			printf("Checking room name [%s].\n", buf);
+			// Room name is in buf, lets find the room!
+			locate_room (buf, 0, NULL);
+		}
+
+        }
+               
+        // Two pointers, one point
+        //p = buf+4;
+ 
+        // Copy string between pointer to name
+        //strcpy( roomname, p );
+        //buf[1 + line-p] = '\0'; // strcpy doesn't append \0
+}
 
 
 void parse_allysense( char *line )
@@ -6397,9 +6393,8 @@ void parse_angelrite(char *li)
 	if ( !cmp("Your angel senses *.",line) ) {
 		if ( ( line = strstr(line, " at ") ) )
 		{line += 4;
-			if ( !( end = strstr(line, ", with a health ") ) )
-			   if (	!( end = strstr(line, " with a health") ) )
-			      return;
+			if ( !( end = strstr(line, ", on a health ") ) )
+				end = strstr(line, " on a health");
 			strncpy( buf, line, end - line );
 			buf[end-line] = '.';
 			buf[end-line+1] = 0;
@@ -6436,10 +6431,6 @@ void parse_wormholes( char *line )
 
 void parse_scry( char *line )
 {
-	if ( !fulllineok )
-		return;
-	line = fullline;
-
 	char buf[256];
 	char name[256];
 
@@ -6447,20 +6438,32 @@ void parse_scry( char *line )
 
 	int pool = strncmp( line, "You create a pool of water in the air in front of you, and look through it,", 75 );
 	int mirror = strncmp( line, "You create a shimmering mirror in the air in front of you, and look through it,", 79 );
-	int fire = strncmp(line, "A burst of white-hot steam flows out of your fingertips, and as the steam condenses, you see an image",101);
-	if ( pool && mirror && fire ) {
+	if ( !sense_message && ( pool || mirror) ) {
 		return;
 	}
 
+	if ( !sense_message )
+	{
 		if ( !mirror ) {
 			line += 79;
 		}
 		else if ( !pool ) {
 			line += 75;
 		}
-		else if ( !fire ) {
-		    line += 101;
-        }
+
+		line = get_string( line, buf, 256 );
+		if ( !strncmp(buf, "sensing", 7) ) {
+			line = get_string( line, name, 256 );
+			line = get_string( line, buf, 256 );
+			locate_room( line, 1, name );
+		} else {
+
+			sense_message = 1;
+		}
+	}
+
+	if ( sense_message == 1 )
+	{
 		/* Next line: "sensing Whyte at Antioch Runners tent." */
 		/* Skip the first three words. */
 		line = get_string( line, buf, 256 );
@@ -6468,6 +6471,7 @@ void parse_scry( char *line )
 		line = get_string( line, buf, 256 );
 
 		locate_room( line, 1, name );
+	}
 }
 
 
@@ -6691,7 +6695,7 @@ void parse_shrinesight( char *line )
 
 
 
-void parse_entities( char *line )
+/*(void parse_entities( char *line )
 {
 	char *p;
 	char buf[256];
@@ -6724,7 +6728,7 @@ void parse_entities( char *line )
 		strcpy( buf, p + 7 );
 
 	locate_room( buf, 2, NULL );
-}
+}*/
 
 void parse_traplist( char *line )
 {
@@ -7488,8 +7492,6 @@ void parse_special_exits( char *line )
 				{
 					current_room = spexit->to;
 					current_area = current_room->area;
-					if ( !disable_automap ) {
-						didmove = 1;}
 					if ( !spexit->nolook )
 					{add_queue_top( -1 );}
 					else
@@ -7529,13 +7531,13 @@ void parse_special_exits( char *line )
 					{havenstore = current_room;}
 					current_room = spexit->to;
 					current_area = current_room->area;
-					if ( !disable_automap ) {
-						didmove = 1;}
 					if ( !spexit->nolook )
 					{add_queue_top( -1 );}
 					else
 					{if ( auto_walk )
 						auto_walk = 2;}
+					if ( !disable_automap ) {
+						didmove = 1;}
 				}
 				else
 				{
@@ -7820,7 +7822,7 @@ void parse_follow( char *line )
 	}
 }
 
-void parse_aetoliastuff ( char *line )
+/* void parse_aetoliastuff ( char *line )
 {
 	if ( !strcmp("Password correct. Welcome to Aetolia.",line) )
 	{onlogin = 0;}
@@ -7977,29 +7979,7 @@ void parse_aetoliastuff ( char *line )
 			locate_room_in_area( line2, "tent",0, farea );
 		}
 	}
-}
-
-
-void parse_arealeylinesearch( char *line )
-{
-   if (!area_leylinesearch)
-     return;
-   if (strstr(line,"motes of light cascade around the untapped focal point here, wavering in and out of reality with each resonance of the leyline."))
-     {
-         area_leylinesearch = 0;
-         sleyroom = NULL;
-         		if ( auto_walk != 0 )
-		        {
-			     auto_walk = 0;
-			     justwarped = 0;
-                 dash_command = NULL;
-			     except = NULL;
-			    }
-         clientff(C_R"\r\n[LEYLINE FOUND]\r\n"C_0);
-         return;
-     }
-}
-
+} */
 
 void parse_areasearch( char *line )
 {
@@ -8140,7 +8120,7 @@ void parse_infohere( char *line)
 			line = strstr(line, " of ");
 			line = get_string(line+4,dname,128);
 			if (strcmp(csize,"master")) {
-				dname[strlen(dname)-1] = 0;}
+				dname[strlen(dname)] = 0;}
 			if ( ( current_room->shrinedivine && strcmp(dname, current_room->shrinedivine ) ) || !current_room->shrinedivine ) {
 				clientf("\r\n");
 				sprintf(buf, "%s%s large %s", current_room->shrinedivine ? "update " : "" , dname,csize);
@@ -8274,6 +8254,7 @@ void check_autobump( )
 }
 
 
+
 void i_mapper_process_server_line( LINE *l )
 {
 	const char *block_messages[] =
@@ -8405,8 +8386,6 @@ void i_mapper_process_server_line( LINE *l )
 	/* Is this a follow message, if we're following someone? */
 	parse_follow( l->line );
 
-	parse_aetoliastuff(l->line);
-
 	parse_nointeract(l->line);
 
 	parse_conscripts( l->line );
@@ -8421,6 +8400,7 @@ void i_mapper_process_server_line( LINE *l )
 		parse_auraglance( l->line );
 		parse_window( l->line );
 		parse_eldsense( l->line );
+		parse_scout( l->line );
 		parse_scent( l->line );
 		parse_cgc( l->line );
 		parse_allysense( l->line );
@@ -8434,7 +8414,7 @@ void i_mapper_process_server_line( LINE *l )
 		parse_werepack( l->line );
 		parse_watch( l->line );
 		parse_pursue( l->line );
-		parse_entities( l->line );
+		//parse_entities( l->line );
 		parse_traplist( l->line );
 		parse_eventstatus( l->line );
 		parse_sources( l->line );
@@ -8451,7 +8431,7 @@ void i_mapper_process_server_line( LINE *l )
 	parse_owner( l->line );
 	parse_ruler( l->line );
 	/* no wing areas */
-	parse_nowing( l->line );
+	parse_nowingarea( l->line );
 	/* fullline cleanup */
 	if ( fulllineok ) {
 		memset( fullline, '\0', sizeof(fullline) );}
@@ -8488,21 +8468,19 @@ void i_mapper_process_server_line( LINE *l )
 	if ( mode == FOLLOWING || mode == CREATING )
 		parse_underwater( line );
 
-	parse_arealeylinesearch( l->line );
 	parse_autobump( line );
 	parse_areasearch( l->line );
 	parse_infohere( l->line );
 
-
 	if ( !cmp( "You have recovered balance on all limbs.", l->line ) )
 	{
-		if ( mode == FOLLOWING && auto_walk /*&& ( burrowed || current_room->pointed_by || dash_command ) */)
+		if ( mode == FOLLOWING && auto_walk && ( burrowed || current_room->pointed_by || dash_command ) )
 			auto_walk = 2;
 	}
 
 	if ( !cmp( "You have recovered equilibrium.", l->line ) )
 	{
-		if ( mode == FOLLOWING && auto_walk /* && ( troopmove || justwarped || dash_command || guardmove )*/ )
+		if ( mode == FOLLOWING && auto_walk && ( troopmove || justwarped || dash_command || guardmove ) )
 		{
 			auto_walk = 2;
 			if ( justwarped ) justwarped = 0;
@@ -8771,13 +8749,13 @@ void i_mapper_process_server_prompt( LINE *l )
 			current_room->ruler = NULL;
 		}}
 
-	if ( mode != GET_UNLOST && !onlogin )
-	{clientf("\r\n[Forcing aetolia MXP off, mapper currently doesn't work with it.]");
+	 /* if ( mode != GET_UNLOST && !onlogin )
+	{clientf("\r\n[Forcing MXP off, mapper currently doesn't work with it.]");
 		send_to_server("config mxp off\r\n");
 		if (!disable_forcewrap )
 		{clientf("\r\n[Setting wrapwidth to 0 for optimal performance. (Can be disabled with: map config forcewrap)]");
 			send_to_server("config wrapwidth 0\r\n");}
-		onlogin = 1;}
+		onlogin = 1;} */
 
 	if ( get_unlost_exits )
 	{
@@ -8880,14 +8858,14 @@ void i_mapper_process_server_prompt( LINE *l )
 			}
 		}
 	}
-	if ( current_room && !pear_defence &&
+	if ( current_room && !pear_defence && !disable_pear &&
 			( current_room->underwater ||
 			  current_room->room_type->underwater ) )
 	{
 		pear_defence = 1;
 		if ( !wateroption ) {
-			clientf( C_W "(" C_G "outc pear"C_W"/"C_G"eat pear" C_W ") " C_0 );
-			send_to_server("outc pear\r\neat pear\r\n");
+			clientf( C_W "(" C_G "outr pear"C_W"/"C_G"eat pear" C_W ") " C_0 );
+			send_to_server("outr pear\r\neat pear\r\n");
 		}
 		if ( wateroption == 3 ) {
 			clientf( C_W "(" C_G "belch"C_W"/"C_G"morph swordfish" C_W ") " C_0 );
@@ -8937,22 +8915,6 @@ void i_mapper_process_server_prompt( LINE *l )
 		l->gag_ending = 1;
 	}
 }
-/*
-void i_mapper_process_server_paragraph( LINES *l )
-{
-   int line;
-
-
-   for ( line = 1; line <= l->nr_of_lines; line++ )
-     {
-
-     }
-
-
-
-
-   i_mapper_process_server_prompt( NULL );
-}*/
 
 
 
@@ -9292,14 +9254,7 @@ void do_map_path( char *arg )
 					init_openlist( NULL );
 					return;
 				}
-			} else {
-				if ( !( room = get_room_atv( atoi( buf ) ) ) )
-				{
-					clientff( C_R "[No room with the aetolian vnum '%s' was found.]\r\n" C_0, buf );
-					init_openlist( NULL );
-					return;
-				}
-			}
+			} 
 
 			if ( !neari ) {
 				if ( room->area->disabled )
@@ -9530,7 +9485,6 @@ void do_map_color( char *arg )
 		if ( !strcmp( color_names[i].name, buf ) )
 		{
 			room_color = color_names[i].title_code;
-			daynight_color = daynight_names[i].title_code;
 			room_color_len = color_names[i].length;
 
 			sprintf( buf, "Room title color changed to: " C_0 "%s%s" C_R ".",
@@ -9731,6 +9685,12 @@ void do_map_config( char *arg )
 		{ "swim", &disable_swimming,
 			"Swimming disabled - will now walk over water.",
 			"Swimming enabled." },
+		{ "crash", &disable_crashing,
+               "Crashing disabled - will now stop if trapped.",
+               "Crashing enabled." },
+		{ "pear", &disable_pear,
+               "Eating pear disabled - hope you have a glassbubble.",
+               "Eating pear enabled." },
 		{ "wholist", &disable_wholist,
 			"Parsing disabled.",
 			"Parsing enabled" },
@@ -9755,6 +9715,12 @@ void do_map_config( char *arg )
 		{ "autolink", &disable_autolink,
 			"Auto-linking disabled.",
 			"Auto-linking enabled." },
+		{ "sewer_grates", &disable_sewer_grates, 
+               "Pathfinding through sewer grates disabled.",
+               "Pathfinding through sewer grates enabled." },
+        { "god_rooms", &enable_godrooms, 
+               "Parsing titles with GodRooms enabled.",
+               "Parsing titles with GodRooms disabled." },
 		{ "artifacts", &disable_artifacts,
 			"Pathfinding with artifact disabled.",
 			"Pathfinding with artifact enabled." },
@@ -10520,8 +10486,7 @@ void do_area_help( char *arg )
 			" area conn   - Will inform you of which areas are connected to this and where.\r\n"
 			" area destroy- Will destroy the area you enter after it.\r\n"
 			" area types  - Will show you the room types in this area.\r\n"
-			" area note   - Will allow you to set a note for the area you are in.\r\n"
-			" area leyline- Will allow you to search for leylines, remember to have detection up!\r\n");
+			" area note   - Will allow you to set a note for the area you are in.\r\n");
 }
 
 void do_area_destroy( char *arg )
@@ -10828,72 +10793,6 @@ void do_area_find( char *arg )
 	clientff(C_R"["C_G"%d"C_W" rooms found."C_R"]\r\n"C_0, count);
 }
 
-
-void do_area_leys( char *arg )
-{
-    if ( !current_area)
-    {
-        clientfr("No current area.");
-        return;
-    }
-	if ( !strcmp(arg,"help") || !arg[0] )
-    {
-        clientfr("Area Leyline help");
-        clientff(" area leyline search  - Begins searching the current area for a leyline.\r\n"
-                 " area leyline skip    - Willskip past any room you can't enter.\r\n"
-                 " area leyline stop    - Stops the searching.\r\n");
-    }
-    if (!current_room)
-    {
-        clientfr("No currenet room");
-        return;
-    }
-    if (!strcmp(arg,"search"))
-    { clientfr("The Hunt for a Leyline has begun!");
-      area_leylinesearch = 1;
-      sleyroom = current_room->area->rooms;
-  	  init_openlist( NULL );
-	  init_openlist( sleyroom );
-	  path_finder( );
-	  go_next( );
-    }
-    if (!strcmp(arg,"skip"))
-    {
-      area_leylinesearch = 1;
-	  sleyroom = sleyroom->next_in_area;
-  	  init_openlist( NULL );
-	  init_openlist( sleyroom );
-	  path_finder( );
-	  clientfr( "Skipped one room." );
-      go_next( );
-    }
-    if (!strcmp(arg,"stop"))
-    {
-        area_leylinesearch = 0;
-		init_openlist( NULL );
-		sleyroom = NULL;
-		clientfr("Searching Stopped");
-		return;
-    }
-    if (!strcmp(arg,"continue"))
-    {
-        if (!sleyroom)
-        {
-            clientfr("cannot continue searching");
-        }
-        else
-        {
-            area_leylinesearch = 1;
-            clientfr("Leyline search continuing");
-  	        init_openlist( NULL );
-	        init_openlist( sleyroom );
-	        path_finder( );
-	        go_next( );
-        }
-    }
-}
-
-
 void do_area_search( char *arg )
 {
 	if ( !current_area )
@@ -10901,7 +10800,7 @@ void do_area_search( char *arg )
 		clientfr( "No current area." );
 		return;
 	}
-	if ( !strcmp(arg,"help") || !arg[0] )
+	if ( !strcmp(arg,"help") )
 	{clientfr("Area Search Help:");
 		clientff(" area search Help     - This help file.\r\n"
 				" area search nostop   - Will toggle stopping on finding what is searched for.\r\n"
@@ -12335,28 +12234,6 @@ void do_room_find( char *arg )
 		return;
 	}
 
-	/* looking for an aetolia vnum? */
-	if ( !strncmp(arg, "atv",3) )
-	{  clientfr("All rooms with Aetolian Vnum");
-		for ( room = world; room; room = room->next_in_world )
-			if ( room->aetvnum > 0 ) {
-				clientff( " " C_D "(" C_G "%5d" C_D ") "C_c"("C_y"%5d"C_c")" C_0 " %-50.50s%s%s%s%s%s%s%s%s%s\r\n",
-						room->vnum,
-						room->aetvnum > 0 ? room->aetvnum : 0,
-						room->name,
-						room->area != current_area ? " (" : "",
-						room->area != current_area ? room->area->name : "",
-						room->area != current_area ? ")" : "",
-						room->additional_name[1] ? C_C" (" : "",
-						room->additional_name[1] ? C_Y"A" : "",
-						room->additional_name[1] ? C_C")" : "",
-						room->owner ? C_C" Owner: " : "",
-						room->owner ? C_W"" : "",
-						room->owner ? room->owner : "" );
-				count++;}
-		clientff(C_R"["C_G"%d"C_W" rooms found."C_R"]\r\n"C_0, count);
-		return;
-	}
 	/* Looking for a room type? */
 	if ( !strncmp( arg, "type ", 5 ) )
 	{
@@ -14452,8 +14329,6 @@ void do_go( char *arg )
 		dash_command = "gallop ";
 	else if ( !strcmp(arg, "shift") )
 		dash_command = "sand shift ";
-    else if ( strstr(arg, "wing") )
-        artimsg = wingcmd;
     else if ( autowing )
          artimsg = wingcmd;
 	else if ( strstr(arg, "troops") )
@@ -14790,7 +14665,6 @@ FUNC_DATA cmd_table[] =
 	{ "find",      do_area_find,   CMD_AREA },
 	{ "connected", do_area_conn,   CMD_AREA },
 	{ "search",    do_area_search, CMD_AREA },
-	{ "leyline",   do_area_leys,   CMD_AREA },
 	{ "switch",	do_area_switch,	CMD_AREA },
 	{ "destro",    do_area_fulld,  CMD_AREA },
 	{ "destroy",   do_area_destroy,CMD_AREA },

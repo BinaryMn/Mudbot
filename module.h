@@ -20,7 +20,7 @@
  *
  */
 
-#define MODULE_ID "$Name: Release_6 $ $Id: module.h,v 3.1 2005/12/08 18:02:56 andreivasiliu Exp $"
+#define MODULE_ID "$Name:  $ $Id: module.h,v 3.4 2006/12/07 22:54:11 andreivasiliu Exp $"
 
 /* Module header file, to be used with all module source files. */
 
@@ -68,6 +68,8 @@ void	(*show_prompt)( );
 void	(*mxp)( char *string, ... ) __attribute__ ( ( format( printf, 1, 2 ) ) );
 int	(*mxp_tag)( int tag );
 int	(*mxp_stag)( int tag, char *dest );
+void	(*share_memory)( char *name, void *pointer, int size );
+void	(*shared_memory_is_pointer_to_string)( char *name );
 
 /* Utility */
 #if defined( FOR_WINDOWS )
@@ -75,12 +77,13 @@ int	(*gettimeofday)( struct timeval *tv, void * );
 #endif
 char *	(*get_string)( char *argument, char *arg_first, int max );
 int	(*cmp)( char *trigger, char *string );
+void	(*extract_wildcard)( int nr, char *dest, int max );
 
 /* Timers */
 TIMER *	(*get_timers)( );
 int	(*get_timer)( );
-void	(*add_timer)( char *name, int delay, void (*cb)( TIMER *self ), int d0, int d1, int d2 );
-void	(*del_timer)( char *name );
+TIMER *	(*add_timer)( const char *name, float delay, void (*cb)( TIMER *self ), int d0, int d1, int d2 );
+void	(*del_timer)( const char *name );
 
 /* Networking */
 DESCRIPTOR *(*get_descriptors)( );
@@ -117,9 +120,12 @@ int	(*c_close)( int fd );
    mxp = self->get_func( "mxp" ); \
    mxp_tag = self->get_func( "mxp_tag" ); \
    mxp_stag = self->get_func( "mxp_stag" ); \
+   share_memory = self->get_func( "share_memory" ); \
+   shared_memory_is_pointer_to_string = self->get_func( "shared_memory_is_pointer_to_string" ); \
    /* Utility */ \
    get_string = self->get_func( "get_string" ); \
    cmp = self->get_func( "cmp" ); \
+   extract_wildcard = self->get_func( "extract_wildcard" ); \
    /* Timers */ \
    get_timers = self->get_func( "get_timers" ); \
    get_timer = self->get_func( "get_timer" ); \
