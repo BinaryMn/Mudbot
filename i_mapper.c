@@ -172,6 +172,7 @@ int door_unlocked;
 int door_opened;
 int swim_next = 0;
 int walk_next = 0;
+int crash_next = 0;
 int locate_arena;
 int capture_special_exit;
 char cse_command[5120];
@@ -2271,245 +2272,291 @@ int can_dash( ROOM_DATA *room )
 
 void go_next( )
 {
-	EXIT_DATA *spexit;
-	char buf[256];
-	char *exitparse;
-	char *p;
-	int dashwait = 0;
+  EXIT_DATA *spexit;
+  char buf[256];
+  char *exitparse;
+  char *p;
+  int dashwait = 0;
 
-	if ( moved ) moved = 0;
-	if ( !current_room )
-	{
-		clientf( C_R "[No current_room.]" C_0 );
-		auto_walk = 0;
-	}
-	else if ( !current_room->pf_parent && !strcmp(current_room->area->name,"The Havens."))
-	{
-		sprintf( buf, "Exit Haven" );
-		clientfr( buf );
-		sprintf( buf, "Exit Haven\r\n" );
-		send_to_server( buf );
-		auto_walk = 1;
-	}
-	else if ( !current_room->pf_parent )
-	{
-		auto_walk = 0;
-		dash_command = NULL;
-		except = NULL;
-		clientff( C_R "(" C_G "Done." C_R ") " C_0 );
-		troopmove = 0;
-		guardmove = 0;
-		if ( area_search ) {
-			if ( current_room == search_room ) {
-				send_to_server( "info here\r\n" );
-			} else {
-				area_search=0;
-				clientff(C_R"\r\n[Unable to find path to "C_y"%s "C_G"%d"C_R"]\r\n"C_0,search_room->name,search_room->vnum);
-			}
-		}
-	}
-	else if ( troopmove == 1 && troopn != NULL )
-	{
-		if ( dir_name[current_room->pf_direction] == NULL ) {
-			auto_walk = 0;
-			justwarped = 0;
-			dash_command = NULL;
-			except = NULL;
-			troopmove = 0;
-			clientf(C_R"\r\nTroops cannot get to that location, special exit.\r\n"C_0);
-			return;
-		} else {
-			if ( !gag_next_prompt )
-				clientff( C_D "(order %s march %s) " C_0, troopn ,dir_name[current_room->pf_direction] );
-			sprintf(buf, "order %s march %s\r\n", troopn, dir_name[current_room->pf_direction] );
-			send_to_server( buf );
-			troopmove = 2;
-			auto_walk = 2;
-		}
-	}
-	else if ( guardmove == 1 && guardnum != NULL )
-	{
-		if ( dir_name[current_room->pf_direction] == NULL ) {
-			auto_walk = 0;
-			justwarped = 0;
-			dash_command = NULL;
-			except = NULL;
-			guardmove = 0;
-			clientf(C_R"\r\nGuards cannot get to that location, special exit.\r\n"C_0);
-			return;
-		} else {
-			if ( !gag_next_prompt )
-				clientff( C_D "(order %s move %s) " C_0, guardnum ,dir_name[current_room->pf_direction] );
-			sprintf(buf, "order %s move %s\r\n", guardnum, dir_name[current_room->pf_direction] );
-			send_to_server( buf );
-			guardmove = 2;
-			auto_walk = 2;}
-	}
-	else if ( artimsg || cmp_room_wing() ) {
-	    artimsg = wingcmd;
-		sprintf( buf, "say %s", artimsg );
-		clientfr( buf );
-		sprintf( buf, "say %s\r\n", artimsg );
-		send_to_server( buf );
-		auto_walk = 1;
-		mode = GET_UNLOST;
-		artimsg = NULL;
-	}
-	else if ( swim_next && mounted ) {
-		swim_next = 0;
-		clientfr("You need to dismount to swim");
-		auto_walk = 0;
-		dash_command = NULL;
-		except = NULL;
-		troopmove = 0;
-		guardmove = 0;
-	}
-	else
-	{
-		if ( ( current_room->pf_direction != -1 ) && ( current_room->pf_direction != -2 ) )
-		{
-			if ( door_closed ) {
-				sprintf( buf, "open %s", dir_name[current_room->pf_direction] );
-				clientfr( buf );
-				sprintf( buf, "open door %s\r\n", dir_small_name[current_room->pf_direction] );
-				send_to_server( buf );
-			} else if ( door_locked ) {
-				if ( !disable_auto_unlock ) {
-					sprintf( buf, "unlock door %s", dir_name[current_room->pf_direction] );
-					clientfr( buf );
-					sprintf( buf, "unlock door %s\r\n", dir_small_name[current_room->pf_direction] );
-					send_to_server( buf );
-					return;
-				}
-			} else {
-				if ( wateroption == 3 && !pear_defence && !current_room->room_type->underwater
-						&& current_room->room_type->must_swim && !current_room->underwater &&
-						(current_room->pf_parent->room_type->underwater || current_room->pf_parent->underwater) ) {
-					clientf( C_W "(" C_G "belch"C_W"/"C_G"morph swordfish" C_W ") " C_0 );
-					send_to_server("belch\r\nmorph swordfish\r\n");
-					if (!( dash_command && !strcmp(dash_command, "gallop " ) ))
-						walk_next = 1;
-				}
-				if ( ( must_swim( current_room, current_room->pf_parent ) ) && ( !walk_next ) && ( !burrowed ) ) {
-					send_to_server( "swim " );
-					if ( !gag_next_prompt )
-						clientff( C_R "(swim %s) " C_0, dir_name[current_room->pf_direction] );
-				}
+  if ( moved ) moved = 0;
+  if ( !current_room )
+  {
+    clientf( C_R "[No current_room.]" C_0 );
+    auto_walk = 0;
+  }
+  else if ( !current_room->pf_parent )
+  {
+    auto_walk = 0;
+    dash_command = NULL;
+    caravan_command = NULL;
+    except = NULL;
+    clientff( C_R "(" C_G "Done." C_R ") " C_0 );
+    troopmove = 0;
+    guardmove = 0;
+    if ( area_search ) {
+      if ( current_room == search_room ) 
+      {
+        send_to_server( "info here\r\n" );
+      }
+      else 
+      {
+        area_search=0;
+        clientff(C_R"\r\n[Unable to find path to "C_y"%s "C_G"%d"C_R"]\r\n"C_0,search_room->name,search_room->vnum);
+      }
+    }
+  }
+  else if ( troopmove == 1 && troopn != NULL )
+  {
+    if ( dir_name[current_room->pf_direction] == NULL ) {
+      auto_walk = 0;
+      justwarped = 0;
+      dash_command = NULL;
+      except = NULL;
+      troopmove = 0;
+      clientf(C_R"\r\nTroops cannot get to that location, special exit.\r\n"C_0);
+      return;
+    }
+   else 
+   {
+     if ( !gag_next_prompt )
+       clientff( C_D "(order %s march %s) " C_0, troopn ,dir_name[current_room->pf_direction] );
+     sprintf(buf, "order %s march %s\r\n", troopn, dir_name[current_room->pf_direction] );
+     send_to_server( buf );
+     troopmove = 2;
+     auto_walk = 2;
+   }
+  }
+  else if ( guardmove == 1 && guardnum != NULL )
+  {
+    if ( dir_name[current_room->pf_direction] == NULL ) {
+      auto_walk = 0;
+      justwarped = 0;
+      dash_command = NULL;
+      except = NULL;
+      guardmove = 0;
+      clientf(C_R"\r\nGuards cannot get to that location, special exit.\r\n"C_0);
+      return;
+    }
+    else
+    {
+      if ( !gag_next_prompt )
+        clientff( C_D "(order %s move %s) " C_0, guardnum ,dir_name[current_room->pf_direction] );
+      sprintf(buf, "order %s move %s\r\n", guardnum, dir_name[current_room->pf_direction] );
+      send_to_server( buf );
+      guardmove = 2;
+      auto_walk = 2;}
+  }
+  else if ( artimsg || cmp_room_wing() ) {
+    artimsg = wingcmd;
+    sprintf( buf, "say %s", artimsg );
+    clientfr( buf );
+    sprintf( buf, "say %s\r\n", artimsg );
+    send_to_server( buf );
+    auto_walk = 1;
+    mode = GET_UNLOST;
+    artimsg = NULL;
+  }
+  else if ( swim_next && mounted ) {
+    swim_next = 0;
+    clientfr("You need to dismount to swim");
+    auto_walk = 0;
+    dash_command = NULL;
+    except = NULL;
+    troopmove = 0;
+    guardmove = 0;
+  }
+  else
+  {
+    if ( ( current_room->pf_direction != -1 ) && ( current_room->pf_direction != -2 ) )
+    {
+      if ( door_closed ) {
+        sprintf( buf, "open %s", dir_name[current_room->pf_direction] );
+        clientfr( buf );
+        sprintf( buf, "open door %s\r\n", dir_small_name[current_room->pf_direction] );
+        send_to_server( buf );
+      } else if ( door_locked ) {
+        if ( !disable_auto_unlock ) {
+          sprintf( buf, "unlock door %s", dir_name[current_room->pf_direction] );
+          clientfr( buf );
+          sprintf( buf, "unlock door %s\r\n", dir_small_name[current_room->pf_direction] );
+          send_to_server( buf );
+          return;
+        }
+      }
+      else
+      {
+        if ( !gag_next_prompt )
+          clientff( C_R "(" C_r "%d" C_R " - %s) " C_0, current_room->pf_cost - 1, dir_name[current_room->pf_direction] );
+        if ( must_swim( current_room, current_room->pf_parent ) && !walk_next && !crash_next && !caravan_command )
+        {               
+          send_to_server( "swim " );
+          if ( !gag_next_prompt )
+            clientff( C_R "(swim %s) " C_0, dir_name[current_room->pf_direction] );
+          }
+        if ( swim_next && !caravan_command )  
+        {
+          swim_next = 0;    
+          send_to_server( "swim " );
+          if ( !gag_next_prompt )
+            clientff( C_R "(swim %s) " C_0, dir_name[current_room->pf_direction] );                                 
+        }
+        if ( crash_next )  
+        {
+          clientf( "Need to crash now.\r\n" );
+          crash_next = 0;     
+          send_to_server( "crash " );
+          if ( !gag_next_prompt )
+            clientff( C_R "(crash %s) " C_0, dir_name[current_room->pf_direction] );                                 
+        }
+        if ( caravan_command )  
+        {
+          walk_next = 0; swim_next = 0;
+          send_to_server( "lead caravan " );
+          if ( !gag_next_prompt )
+            clientff( C_R "(lead caravan %s) " C_0, dir_name[current_room->pf_direction] );                                 
+        }
 
-				if ( swim_next && !mounted ) {
-					swim_next = 0;
-					send_to_server( "swim " );
-					if ( !gag_next_prompt )
-						clientff( C_R "(swim %s) " C_0, dir_name[current_room->pf_direction] );
-				}
-
-
-				if ( burrowed ) {
-					if ( !burrowtype )
-						send_to_server( "burrow " );
-					else if ( burrowtype == 1 )
-						send_to_server( "sand sink " );
-					if ( !gag_next_prompt ) {
-						if ( !burrowtype )
-							clientff( C_R "(burrow %s) " C_0, dir_name[current_room->pf_direction] );
-						else if ( burrowtype == 1 )
-							clientff( C_R "(sand sink %s) " C_0, dir_name[current_room->pf_direction] );
-					}
-				}
-
-				if ( walk_next ) {
-					if ( dash_command )
-						dashwait = 1;
-					walk_next = 0;
-					moved = 1;
-					clientff( C_R "(%s) " C_0, dir_name[current_room->pf_direction] );
-				}
-
-
-				if ( !must_swim( current_room, current_room->pf_parent ) &&
-						dash_command && (dashwait || can_dash( current_room )) )
-				{
-					if ( dashwait )
-					{
-						dashwait=0;
-						add_queue_top( current_room->pf_direction );
-					} else {
-						send_to_server( dash_command );
-						if ( !gag_next_prompt )
-							clientff( C_R "(%s%s) " C_0, dash_command, dir_name[current_room->pf_direction] );
-					}
-				} else {
-					if ( mode == FOLLOWING || mode == CREATING )
-					{
-						add_queue( current_room->pf_direction );
-						if ( ( !gag_next_prompt ) && ( !swim_next ) && ( !burrowed )
-								&& ( ( !must_swim( current_room, current_room->pf_parent ) ) ) )
-							if ( !moved )
-								clientff( C_R "(%s) " C_0, dir_name[current_room->pf_direction] );
-					}
-				}
-				lastdir = current_room->pf_direction;
-				send_to_server( dir_small_name[current_room->pf_direction] );
-				send_to_server( "\r\n" );
-				if ( door_unlocked ) {
-					clientff( C_R "(Relock %s) " C_0, dir_rev_name[current_room->pf_direction]);
-					sprintf(buf, "close door %s\r\nlock door %s\r\n", dir_rev_name[current_room->pf_direction],
-							dir_rev_name[current_room->pf_direction] );
-					send_to_server( buf );
-					door_unlocked = 0;
-					door_opened = 0;
-				} else if ( door_opened ) {
-					clientff( C_R "(Closing %s) " C_0, dir_rev_name[current_room->pf_direction]);
-					sprintf(buf, "close door %s\r\n", dir_rev_name[current_room->pf_direction]);
-					send_to_server( buf );
-					door_opened = 0;
-				}
-			}
-		}
-		else if ( current_room->pf_direction == -1 ) {
-			if ( !nointeract ) {
-				for ( spexit = current_room->special_exits; spexit; spexit = spexit->next )
-				{
-					if ( spexit->to == current_room->pf_parent &&
-							spexit->command )
-					{
-						clientff( C_R "(" C_D "%s" C_R ") " C_0, spexit->command );
-						exitparse = spexit->command;
-						for ( p = exitparse; *p; p++ )
-							if ( *p == '$' )
-								*p = '\n';
-						send_to_server( exitparse );
-						send_to_server( "\r\n" );
-						for ( p = exitparse; *p; p++ )
-							if ( *p == '\n' )
-								*p = '$';
-						if ( spexit->nomsg )
-						{
-							current_room = spexit->to;
-							current_area = current_room->area;
-							if ( !spexit->nolook )
-							{add_queue_top( -1 );}
-							else
-							{if ( auto_walk )
-								auto_walk = 2;}
-						}
-						break;
-					}
-				}
-			} else {
-				clientfr("You are in black wind and cannot use special exits");
-				auto_walk = 0;
-				justwarped = 0;
-				dash_command = NULL;
-				except = NULL;}
-		} else if ( current_room->pf_direction == -2 ) {
-			clientff( C_R "(" C_D "Worm Warp" C_R ") " C_0 );
-			send_to_server( "worm warp" );
-			send_to_server( "\r\n" );
-			justwarped=1;
-		}
-		auto_walk = 1;
-	}
+        /*{
+          if ( wateroption == 3 && !pear_defence && !current_room->room_type->underwate r&& current_room->room_type->must_swim && !current_room->underwater && (current_room->pf_parent->room_type->underwater || current_room->pf_parent->underwater) ) 
+          {
+            clientf( C_W "(" C_G "belch"C_W"/"C_G"morph swordfish" C_W ") " C_0 );
+            send_to_server("belch\r\nmorph swordfish\r\n");
+            if (!( dash_command && !strcmp(dash_command, "gallop " ) ))
+              walk_next = 1;
+          }
+          if ( ( must_swim( current_room, current_room->pf_parent ) ) && ( !walk_next ) && ( !burrowed ) ) 
+          {
+            send_to_server( "swim " );
+            if ( !gag_next_prompt )
+              clientff( C_R "(swim %s) " C_0, dir_name[current_room->pf_direction] );
+          }
+          if ( swim_next && !mounted ) 
+          {
+            swim_next = 0;
+            send_to_server( "swim " );
+            if ( !gag_next_prompt )
+              clientff( C_R "(swim %s) " C_0, dir_name[current_room->pf_direction] );
+          }*/
+        if ( burrowed )
+        {
+          if ( !burrowtype )
+            send_to_server( "burrow " );
+          else if ( burrowtype == 1 )
+            send_to_server( "sand sink " );
+          if ( !gag_next_prompt )
+          {
+            if ( !burrowtype )
+              clientff( C_R "(burrow %s) " C_0, dir_name[current_room->pf_direction] );
+            else if ( burrowtype == 1 )
+              clientff( C_R "(sand sink %s) " C_0, dir_name[current_room->pf_direction] );
+          }
+        }
+        if ( walk_next )
+        {
+          if ( dash_command )
+            dashwait = 1;
+          walk_next = 0;
+          moved = 1;
+          clientff( C_R "(%s) " C_0, dir_name[current_room->pf_direction] );
+        }
+        if ( !must_swim( current_room, current_room->pf_parent ) && dash_command && (dashwait || can_dash( current_room )) )
+        {
+          if ( dashwait )
+          {
+            dashwait=0;
+            add_queue_top( current_room->pf_direction );
+          }
+          else
+          {
+            send_to_server( dash_command );
+            if ( !gag_next_prompt )
+              clientff( C_R "(%s%s) " C_0, dash_command, dir_name[current_room->pf_direction] );
+          }
+        }
+        else
+        {
+          if ( mode == FOLLOWING || mode == CREATING )
+          {
+            add_queue( current_room->pf_direction );
+            if ( ( !gag_next_prompt ) && ( !swim_next ) && ( !burrowed ) && ( ( !must_swim( current_room, current_room->pf_parent ) ) ) )
+              if ( !moved )
+                clientff( C_R "(%s) " C_0, dir_name[current_room->pf_direction] );
+          }
+        }
+        lastdir = current_room->pf_direction;
+        send_to_server( dir_small_name[current_room->pf_direction] );
+        send_to_server( "\r\n" );
+        if ( door_unlocked )
+        {
+          clientff( C_R "(Relock %s) " C_0, dir_rev_name[current_room->pf_direction]);
+          sprintf(buf, "close door %s\r\nlock door %s\r\n", dir_rev_name[current_room->pf_direction], dir_rev_name[current_room->pf_direction] );
+          send_to_server( buf );
+          door_unlocked = 0;
+          door_opened = 0;
+        }
+        else if ( door_opened ) 
+        {
+          clientff( C_R "(Closing %s) " C_0, dir_rev_name[current_room->pf_direction]);
+          sprintf(buf, "close door %s\r\n", dir_rev_name[current_room->pf_direction]);
+          send_to_server( buf );
+          door_opened = 0;
+        }
+      }
+      }
+      else if ( current_room->pf_direction == -1 )
+      {
+        if ( !nointeract )
+        {
+          for ( spexit = current_room->special_exits; spexit; spexit = spexit->next )
+          {
+            if ( spexit->to == current_room->pf_parent && spexit->command )
+            {
+              clientff( C_R "(" C_D "%s" C_R ") " C_0, spexit->command );
+              exitparse = spexit->command;
+              for ( p = exitparse; *p; p++ )
+                if ( *p == '$' )
+                  *p = '\n';
+              send_to_server( exitparse );
+              send_to_server( "\r\n" );
+              for ( p = exitparse; *p; p++ )
+                if ( *p == '\n' )
+                  *p = '$';
+              if ( spexit->nomsg )
+              {
+                current_room = spexit->to;
+                current_area = current_room->area;
+                if ( !spexit->nolook )
+                {
+                  add_queue_top( -1 );
+                }
+                else
+                {
+                  if ( auto_walk )
+                    auto_walk = 2;
+                }
+              }
+              break;
+            }
+          }
+        }
+        else
+        {
+          clientfr("You are in black wind and cannot use special exits");
+          auto_walk = 0;
+          justwarped = 0;
+          dash_command = NULL;
+          except = NULL;
+        }
+      }
+      else if ( current_room->pf_direction == -2 )
+      {
+        clientff( C_R "(" C_D "Worm Warp" C_R ") " C_0 );
+        send_to_server( "worm warp" );
+        send_to_server( "\r\n" );
+        justwarped=1;
+      }
+      auto_walk = 1;
+    }
 }
 
 
@@ -8489,8 +8536,48 @@ void i_mapper_process_server_line( LINE *l )
 
 	if ( auto_walk )
 	{
-		if ( !strncmp( line, "There's water ahead of you.", 27 ) )
-		{
+		if ( !strcmp( line, "You'll have to swim to make it through the water in that direction." ) )
+	      	{
+                  if ( disable_swimming )
+                  {
+                    auto_walk = 0;walk_next = 0;swim_next = 0;
+                    clientf( "\r\n" C_R "[Hint: Swimming is disabled. Use 'map config swim' to turn it back on.]" C_0 );
+                  }
+                  else if ( caravan_command )
+                  { 
+                    auto_walk = 0; walk_next = 0; swim_next = 0;
+                    clientf( "\r\n" C_R "[You have to part the water to keep moving your caravan.]" C_0 );
+                  }
+                  else
+                  {
+                    swim_next = 1;
+                    auto_walk = 2;
+                  } 
+                }
+                if ( !cmp( "The ^ seems to close up before you and you are*", l->line ) || !strcmp( line, "The land lurches beneath you and you fall to the ground." ) )
+                {
+                  if ( disable_crashing )
+                  {
+                    auto_walk = 0;walk_next = 0;crash_next = 0;
+                    clientf( "\r\n" C_R "[Hint: Crashing is disabled. Use 'map config crash' to turn it back on.]" C_0 );
+                  }
+                  else
+                  {
+                    crash_next = 1;
+                    auto_walk = 2;
+                  } 
+                }
+                if ( !strcmp( line, "There is no caravan here that you can lead." ) )
+                {
+                  caravan_command = 0;  
+                } 
+                if ( !strcmp( line, "You crash through the undergrowth that obstructs your way." ) ||
+                    !strcmp( line, "There is no undergrowth barring your way in that direction." ) )
+                {
+                  walk_next = 1;
+                  auto_walk = 2;
+                }    
+                  /*{
 			if ( moved )
 			{
 				if ( mounted )
@@ -8519,7 +8606,7 @@ void i_mapper_process_server_line( LINE *l )
 				swim_next = 1;
 				auto_walk = 2;
 			}
-		}
+		}*/
 
 
 		if ( !strncmp( line, "You get down on your belly and begin trying to swim,", 52 ) )
@@ -14310,6 +14397,7 @@ void do_go( char *arg )
 	}
 
 	dash_command = NULL;
+        caravan_command = NULL;
 	memset(troopn,'\0',sizeof(troopn));
 	memset(guardnum,'\0',sizeof(guardnum));
 	troopmove = 0;
@@ -14325,13 +14413,15 @@ void do_go( char *arg )
 		dash_command = "dash ";
 	else if ( !strcmp( arg, "sprint" ) )
 		dash_command = "sprint ";
+        else if ( !strcmp( arg, "caravan" ) )
+                caravan_command = "caravan ";
 	else if ( !strcmp( arg, "gallop" ) )
 		dash_command = "gallop ";
 	else if ( !strcmp(arg, "shift") )
 		dash_command = "sand shift ";
-    else if ( autowing )
-         artimsg = wingcmd;
-	else if ( strstr(arg, "troops") )
+        else if ( autowing )
+                artimsg = wingcmd;
+        else if ( strstr(arg, "troops") )
 	{
 		strcpy(troopn, arg + 7 );
 		troopmove = 1;
@@ -14342,7 +14432,7 @@ void do_go( char *arg )
 		guardmove = 1;
 	}   else if ( arg[0] )
 	{
-		clientfr( "Usage: go (voltda/duanathar) [dash/sprint/gallop/shift]" );
+		clientfr( "Usage: go (mark/tag) [dash/sprint/caravan/gallop/shift]" );
 		return;
 	}
 
@@ -14747,6 +14837,8 @@ int i_mapper_process_client_aliases( char *line )
 			!strcmp( line, "cast aerial" ) ||
 			!strcmp( line, "squint" ) ||
 			!strcmp( line, "glance" ) ||
+                        !strcmp( line, "tumble" ) ||
+                        !strcmp( line, "lead caravan" ) ||
 			!strcmp( line, "cast sandling" )
 	   )
 	{
@@ -14782,11 +14874,23 @@ int i_mapper_process_client_aliases( char *line )
 
 	/* and leap */
 	if ( !strncmp( line, "leap ", 5 ) )
-		line += 5;
+               line += 5;
 
-	/* Same with Saboteur/Idrasi evading. */
-	if ( !strncmp( line, "evade ", 6 ) )
-		line += 6;
+   /* and vault */
+   if ( !strncmp( line, "vault ", 6 ) )
+     line += 6;
+
+   /* and backflip */
+   if ( !strncmp( line, "backflip ", 9 ) )
+     line += 9;
+
+   /* and frontflip */
+   if ( !strncmp( line, "frontflip ", 10 ) )
+     line += 10;
+           
+   /* Same with Saboteur/Idrasi evading. */
+   if ( !strncmp( line, "evade ", 6 ) )
+     line += 6;
 
 	if ( !strncmp( line, "fade ", 5 ) )
 		line += 5;
@@ -14812,6 +14916,10 @@ int i_mapper_process_client_aliases( char *line )
 	/* sand sink */
 	if ( !strncmp(line, "sand sink ",10) )
 		line += 10;
+
+        /* Caravaning. */
+        if ( !strncmp( line, "lead caravan ", 13 ) )
+          line += 13;
 
 	/* Farsight area only */
 	if ( !strncmp( line, "farsee ", 7) )

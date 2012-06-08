@@ -1,3 +1,17 @@
+06/08/2012
+- Merged some Imperian additions found in souce posted by Silken 
+(http://forums.imperian.com/index.php?showtopic=9562&st=195&p=416837&#entry416837)
+- New features
+	* This merge allows you to 'go caravan'. Compare revisions to see what else 
+was changed.
+	* The changes to parse_follow were not added, but this will come in the 
+future.
+
+- Todo
+	* Include changes to parse_follow
+	* Mounts/dash/galloping in Aetolia may or may not be different in 
+	Imperian. Check to see if it's the different and remove it if it is.
+
 06/06/2012
 - Initial commit, a lot of Aetolia-specific things have been commented out and 
 will be removed in future versions.
@@ -16,6 +30,7 @@ will be removed in future versions.
 - Todo
 	* Fix farsee parsing function
 	* Fix trailblazing pursue function
+	* remove printf debugging messages in parse_scout and locate_room
 	* Remove Aetolia-specific functions that we don't need
 	* Add on to scout function to pass player names to locate_rooms so 
 	player locations are displayed on the map.
